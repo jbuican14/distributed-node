@@ -1,20 +1,28 @@
 #!/usr/bin/env node
-// npm install fastify@3.2
 
-const server = require("fastify")();
+// npm install fastify@3.2
+// Warning: Not as efficient as using a Reverse Proxy
+const fs = require("fs");
+const server = require("fastify")({
+  https: {
+    key: fs.readFileSync(__dirname + "/tls/basic-private-key.key"),
+    cert: fs.readFileSync(__dirname + "/../shared/tls/basic-certificate.cert"),
+  },
+});
+
 const HOST = process.env.HOST || "127.0.0.1";
 const PORT = process.env.PORT || 4000;
 
-console.log(`worker pid=${process.pid}`);
-
 server.get("/recipes/:id", async (req, reply) => {
-  console.log();
-  console.log(`worker requests pid=${process.pid}`);
   const id = Number(req.params.id);
+
   if (id !== 42) {
     reply.statusCode = 404;
-    return {error: "not_found"};
+    return {
+      error: "not_found",
+    };
   }
+
   return {
     producer_pid: process.pid,
     recipe: {
@@ -31,5 +39,5 @@ server.get("/recipes/:id", async (req, reply) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`Producer running at http://${HOST}:${PORT}`);
+  console.log(`Producer running at https://${HOST}:${PORT}`);
 });
